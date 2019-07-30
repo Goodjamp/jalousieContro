@@ -1,6 +1,6 @@
 #include "jalousiecontrol.h"
 #include "ui_jalousiecontrol.h"
-#include "voltagegraph.h"
+#include "channelcontrol.h"
 #include "QHBoxLayout"
 #include "QVBoxLayout"
 #include <QVector>
@@ -18,7 +18,7 @@ jalousieControl::jalousieControl(QWidget *parent) :
     ui->setupUi(this);
     hid = new hidInterface();
     hid->initUSB();
-    voltageGraph1 = new voltageGraph();
+    voltageGraph1 = new channelControl(1);
     static_cast<QHBoxLayout*>(ui->centralWidget->layout())->insertWidget(1,voltageGraph1);
     rxTimer = new QTimer();
 
@@ -28,16 +28,6 @@ jalousieControl::jalousieControl(QWidget *parent) :
     dataCnt = 0;
     voltageGraph1->setYMax(5000);
     voltageGraph1->setXMax(100);
-/*
-    voltageGraph1->setYMax(3.0);
-    voltageGraph1->setYMin(-3.0);
-    for(uint32_t k = 0; k < 3000; k++) {
-        voltageGraph1->addPoint(k * 0.001, 3 * cos(2 * 3.141*k * 0.001));
-    }
-    for(uint32_t k = 4000; k < 5000; k++) {
-        voltageGraph1->addPoint(k * 0.001, 3 * sin(2 * 3.141*k * 0.001));
-    }
-*/
 }
 
 #define READ_SIZE 64

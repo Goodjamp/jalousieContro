@@ -32,21 +32,21 @@ INCLUDEPATH += \
 SOURCES += \
         jalousiecontrol.cpp \
         main.cpp \
-        voltagegraph.cpp \
         qcustomplot/qcustomplot.cpp \
         hidInterface.cpp \
-    jeneralprotocol.cpp
+    generalprotocol.cpp \
+    channelcontrol.cpp
 
 HEADERS += \
         jalousiecontrol.h \
-        voltagegraph.h \
         qcustomplot/qcustomplot.h \
         hidInterface.h \
-    jeneralprotocol.h
+    generalprotocol.h \
+    channelcontrol.h
 
 FORMS += \
         jalousiecontrol.ui \
-        voltagegraph.ui
+    channelcontrol.ui
 
 LIBS    += -lhid\
            -lsetupapi\

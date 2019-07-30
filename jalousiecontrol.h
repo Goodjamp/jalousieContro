@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include "QTimer"
-#include "voltagegraph.h"
+#include "channelcontrol.h"
 #include "hidInterface.h"
 
 
@@ -34,7 +34,7 @@ public:
     ~jalousieControl();
 
 private:
-    voltageGraph *voltageGraph1;
+    channelControl *voltageGraph1;
     Ui::jalousieControl *ui;
     hidInterface *hid;
     QTimer *rxTimer;

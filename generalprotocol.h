@@ -3,11 +3,11 @@
 
 #include "stdint.h"
 
-class jeneralProtocol
+class generalProtocol
 {
 public:
-    jeneralProtocol();
+    generalProtocol();
     uint32_t s;
 };
 
-#endif // JENERALPROTOCOL_H
+#endif // GENERALPROTOCOL_H
