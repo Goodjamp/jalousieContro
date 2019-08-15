@@ -5,21 +5,7 @@
 #include "QTimer"
 #include "channelcontrol.h"
 #include "hidInterface.h"
-
-
-#pragma pack(push, 1)
-#define PROTOCOL_BUFF_SIZE ((64 - 4 - 4) / 2)
-typedef struct SendDataCommandDesc{
-    uint32_t headr;
-    uint32_t size;
-    uint16_t dataBuff[PROTOCOL_BUFF_SIZE];
-} PSendDataCommand;
-
-typedef union {
-    PSendDataCommand command;
-    uint8_t buff[sizeof(PSendDataCommand)];
-} SendDataCommand ;
-#pragma pack(pop)
+#include "generalprotocol.h"
 
 namespace Ui {
 class jalousieControl;
@@ -34,6 +20,7 @@ public:
     ~jalousieControl();
 
 private:
+    generalProtocol *protocol;
     channelControl *voltageGraph1;
     Ui::jalousieControl *ui;
     hidInterface *hid;
@@ -41,9 +28,14 @@ private:
     uint32_t dataCnt;
 
 private slots:
-    void rxHIDData(void);
-
+    void rxData(void);
+    void rxADC(QVector<uint16_t> adcData);
+    void txData(QVector<uint8_t> txData);
     void on_pushButton_clicked();
+    /*channel command processing*/
+    void chStop(uint8_t channelIndex);
+    void chStartClockWise(uint8_t channelIndex);
+    void chStartCounterClockwise(uint8_t channelIndex);
 };
 
 #endif // JALOUSIECONTROL_H
