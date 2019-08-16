@@ -61,7 +61,7 @@ void jalousieControl::rxData(void)
     if((numRead = hid->read(rxHIDBuff, sizeof(rxHIDBuff), 10)) == 0){
         return;
     }
-    protocol->gpParse(rxHIDBuff, numRead);
+    protocol->gpDecode(rxHIDBuff, numRead);
 }
 
 void jalousieControl::txData(QVector<uint8_t> txData)

@@ -15,7 +15,7 @@ public:
 
     uint32_t s;
 
-    bool gpParse(uint8_t data[], uint32_t size);
+    bool gpDecode(uint8_t data[], uint32_t size);
     void gpStopCommandTx(uint8_t channel);
     void gpStartClockWiseCommandTx(uint8_t channel);
     void gpStartContrClockWiseCommandTx(uint8_t channel);

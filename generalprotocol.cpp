@@ -20,13 +20,12 @@ typedef enum{
 #pragma pack(push, 1)
 #define PROTOCOL_BUFF_SIZE (BUFF_SIZE - 4)
 typedef struct GpCommand{
-    uint32_t headr;
-    uint8_t  subcommand[PROTOCOL_BUFF_SIZE];
+    uint8_t headr;
+    uint8_t subcommand[PROTOCOL_BUFF_SIZE];
 } GpCommand;
 
 typedef struct {
-    uint32_t channel;
-    uint32_t size;
+    uint16_t size;
     uint16_t data[];
 }GpADCSubcommand;
 
@@ -46,17 +45,13 @@ generalProtocol::~generalProtocol()
     //
 }
 
-bool generalProtocol::gpParse(uint8_t data[], uint32_t size)
+bool generalProtocol::gpDecode(uint8_t data[], uint32_t size)
 {
     GpCommandBuff gpCommandBuff;
     memcpy((gpCommandBuff.buff), static_cast<uint8_t*>(data), size);
     switch(gpCommandBuff.command.headr) {
         case GP_ADC:
             GpADCSubcommand *gpADCSubcommand = (GpADCSubcommand*)gpCommandBuff.command.subcommand;
-            if(gpADCSubcommand->channel > CHANNEL_CNT && gpADCSubcommand->channel != CHANNEL_ALL) {
-                return false;
-            }
-            //
             QVector<uint16_t> adcRezV;
             for(uint32_t k = 0; k < gpADCSubcommand->size; k++) {
                 adcRezV.push_back(gpADCSubcommand->data[k]);
@@ -74,9 +69,6 @@ void generalProtocol::gpStopCommandTx(uint8_t channel)
     GpCommand *gpCommand = (GpCommand*)(gpCommandV.data());
     gpCommand->headr = GP_STOP;
     gpCommand->subcommand[0] = static_cast<uint8_t>(channel);
-    gpCommand->subcommand[1] = static_cast<uint8_t>(channel >> 8);
-    gpCommand->subcommand[2] = static_cast<uint8_t>(channel >> 16);
-    gpCommand->subcommand[3] = static_cast<uint8_t>(channel >> 24);
     emit gpSend(gpCommandV);
 }
 
@@ -87,9 +79,6 @@ void generalProtocol::gpStartClockWiseCommandTx(uint8_t channel)
     GpCommand *gpCommand = (GpCommand*)(gpCommandV.data());
     gpCommand->headr = GP_START_CLOCK_WISE;
     gpCommand->subcommand[0] = static_cast<uint8_t>(channel);
-    gpCommand->subcommand[1] = static_cast<uint8_t>(channel >> 8);
-    gpCommand->subcommand[2] = static_cast<uint8_t>(channel >> 16);
-    gpCommand->subcommand[3] = static_cast<uint8_t>(channel >> 24);
     emit gpSend(gpCommandV);
 }
 
@@ -100,8 +89,5 @@ void generalProtocol::gpStartContrClockWiseCommandTx(uint8_t channel)
     GpCommand *gpCommand = (GpCommand*)(gpCommandV.data());
     gpCommand->headr = GP_START_CONTR_CLOCK_WISE;
     gpCommand->subcommand[0] = static_cast<uint8_t>(channel);
-    gpCommand->subcommand[1] = static_cast<uint8_t>(channel >> 8);
-    gpCommand->subcommand[2] = static_cast<uint8_t>(channel >> 16);
-    gpCommand->subcommand[3] = static_cast<uint8_t>(channel >> 24);
     emit gpSend(gpCommandV);
 }
