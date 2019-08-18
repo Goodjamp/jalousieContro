@@ -21,9 +21,16 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QPushButton" name="pushButton_Open">
         <property name="text">
          <string>Open</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButton_Close">
+        <property name="text">
+         <string>Close</string>
         </property>
        </widget>
       </item>

@@ -36,6 +36,8 @@ private slots:
     void chStop(uint8_t channelIndex);
     void chStartClockWise(uint8_t channelIndex);
     void chStartCounterClockwise(uint8_t channelIndex);
+    void on_pushButton_Open_clicked();
+    void on_pushButton_Close_clicked();
 };
 
 #endif // JALOUSIECONTROL_H

@@ -24,6 +24,7 @@ public:
 
 private:
     char channelIndex;
+    double xCnt;
 
 private slots:
     void on_pushButtonClearAxes_clicked();

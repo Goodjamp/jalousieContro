@@ -17,7 +17,6 @@ jalousieControl::jalousieControl(QWidget *parent) :
 {
     ui->setupUi(this);
     hid = new hidInterface();
-    hid->initUSB();
     voltageGraph1 = new channelControl(1);
     static_cast<QHBoxLayout*>(ui->centralWidget->layout())->insertWidget(1,voltageGraph1);
     rxTimer = new QTimer();
@@ -29,11 +28,14 @@ jalousieControl::jalousieControl(QWidget *parent) :
     voltageGraph1->setYMax(5000);
     voltageGraph1->setXMax(100);
     protocol = new generalProtocol();
+    ui->pushButton_Open->setEnabled(true);
+    ui->pushButton_Close->setEnabled(false);
     connect(protocol, &generalProtocol::gpADCCommandRx, this, &jalousieControl::rxADC, Qt::QueuedConnection);
     connect(protocol, &generalProtocol::gpSend, this, &jalousieControl::txData, Qt::QueuedConnection);
     connect(voltageGraph1, &channelControl::stop, this, &jalousieControl::chStop, Qt::QueuedConnection);
     connect(voltageGraph1, &channelControl::startClockWise, this, &jalousieControl::chStartClockWise, Qt::QueuedConnection);
     connect(voltageGraph1, &channelControl::startCounterClockwise, this, &jalousieControl::chStartCounterClockwise, Qt::QueuedConnection);
+
 }
 
 jalousieControl::~jalousieControl()
@@ -48,7 +50,6 @@ void jalousieControl::rxADC(QVector<uint16_t> adcData)
     uint32_t k = 0;
     while((k * CH_CNT) < static_cast<uint32_t>(adcData.size())) {
         dataCnt++;
-        voltageGraph1->setXMax(dataCnt);
         voltageGraph1->addPoint(dataCnt, adcData[k * CH_CNT]);
         k++;
     }
@@ -66,19 +67,8 @@ void jalousieControl::rxData(void)
 
 void jalousieControl::txData(QVector<uint8_t> txData)
 {
-    hid->write(txData.data(), static_cast<uint32_t>(txData.size()), 10);
+    hid->write(txData.data(), 64/*static_cast<uint32_t>(txData.size())*/, 10);
 }
-
-void jalousieControl::on_pushButton_clicked()
-{
-    if(!hid->openInterface(VID_DEVICE, PID_DEVICE)) {
-        qDebug()<<"Can't open device";
-        return;
-    }
-    rxTimer->start();
-    qDebug()<<"Device opened";
-}
-
 
 void jalousieControl::chStop(uint8_t channelIndex)
 {
@@ -95,5 +85,25 @@ void jalousieControl::chStartCounterClockwise(uint8_t channelIndex)
     protocol->gpStartContrClockWiseCommandTx(channelIndex);
 }
 
+void jalousieControl::on_pushButton_Open_clicked()
+{
+    if(hid->isHIDOpen()) {
+        hid->closeInterface();
+    }
+    hid->initUSB();
+    if(!hid->openInterface(VID_DEVICE, PID_DEVICE)) {
+        qDebug()<<"Can't open device";
+        return;
+    }
+    rxTimer->start();
+    ui->pushButton_Open->setEnabled(false);
+    ui->pushButton_Close->setEnabled(true);
+    qDebug()<<"Device opened";
+}
 
-
+void jalousieControl::on_pushButton_Close_clicked()
+{
+    hid->closeInterface();
+    ui->pushButton_Open->setEnabled(true);
+    ui->pushButton_Close->setEnabled(false);
+}

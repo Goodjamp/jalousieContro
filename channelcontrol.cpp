@@ -27,6 +27,7 @@ channelControl::channelControl(char inChannelIndex, QWidget *parent) :
     ui->lineEditMinXAxes->setText(QString::number(static_cast<int>(curenXRange.lower), 10));
     ui->lineEditMaxYAxes->setText(QString::number(static_cast<int>(curenYRange.upper), 10));
     ui->lineEditMinYAxes->setText(QString::number(static_cast<int>(curenYRange.lower), 10));
+    xCnt = 0;
 }
 
 channelControl::~channelControl()
@@ -48,8 +49,10 @@ bool channelControl::addPoints(QVector<double> &x, QVector<double> &y)
 
 bool channelControl::addPoint(double x, double y)
 {
-    ui->plote->graph(0)->addData(x, y);
+    setXMax(xCnt);
+    ui->plote->graph(0)->addData(xCnt, y);
     ui->plote->replot();
+    xCnt = xCnt + 1;
     return true;
 }
 
@@ -68,8 +71,6 @@ bool channelControl::setYMin(double min)
     ui->plote->replot();
     return true;
 }
-
-
 
 bool channelControl::setXMax(double max)
 {
@@ -91,6 +92,13 @@ bool channelControl::setXMin(double min)
 void channelControl::on_pushButtonClearAxes_clicked()
 {
     ui->plote->graph(0)->data()->clear();
+    //ui->plote->yAxis->setRange(DEF_Y_MIM, DEF_Y_MAX);
+    //ui->plote->xAxis->setRange(DEF_X_MIM, DEF_X_MAX);
+    xCnt = 0;
+    setYMin(static_cast<double>(DEF_Y_MIM));
+    setYMax(static_cast<double>(DEF_Y_MAX));
+    setXMin(static_cast<double>(DEF_X_MIM));
+    setXMax(static_cast<double>(DEF_X_MAX));
     ui->plote->replot();
 }
 
