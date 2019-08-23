@@ -6,10 +6,14 @@
 #include <QVector>
 #include <QDebug>
 #include <stdint.h>
+#include <stdio.h>
+#include <errno.h>
+#include <QFile>
 
 #define VID_DEVICE 0x0483
 #define PID_DEVICE 0x5711
 
+#define DEFAULT_FILE_PATH "C:\\jalousie.rez"
 
 jalousieControl::jalousieControl(QWidget *parent) :
     QMainWindow(parent),
@@ -51,6 +55,9 @@ void jalousieControl::rxADC(QVector<uint16_t> adcData)
     while((k * CH_CNT) < static_cast<uint32_t>(adcData.size())) {
         dataCnt++;
         voltageGraph1->addPoint(dataCnt, adcData[k * CH_CNT]);
+        if(file != 0) {
+            fprintf(file, "%6.u    %6.u\n", dataCnt, static_cast<uint32_t>(adcData[k * CH_CNT]));
+        }
         k++;
     }
 }
@@ -87,14 +94,24 @@ void jalousieControl::chStartCounterClockwise(uint8_t channelIndex)
 
 void jalousieControl::on_pushButton_Open_clicked()
 {
-    if(hid->isHIDOpen()) {
-        hid->closeInterface();
+    errno = 0;
+    file = 0;
+    if(file != 0) {
+        fclose(file);
     }
+    file = fopen(DEFAULT_FILE_PATH, "w");
+    if(file == 0) {
+        qDebug()<<"Error "<< errno;
+        qDebug()<<"Cant open file";
+        return;
+    }
+
     hid->initUSB();
     if(!hid->openInterface(VID_DEVICE, PID_DEVICE)) {
         qDebug()<<"Can't open device";
         return;
     }
+
     rxTimer->start();
     ui->pushButton_Open->setEnabled(false);
     ui->pushButton_Close->setEnabled(true);
@@ -103,6 +120,9 @@ void jalousieControl::on_pushButton_Open_clicked()
 
 void jalousieControl::on_pushButton_Close_clicked()
 {
+    if(file != 0) {
+        fclose(file);
+    }
     hid->closeInterface();
     ui->pushButton_Open->setEnabled(true);
     ui->pushButton_Close->setEnabled(false);
