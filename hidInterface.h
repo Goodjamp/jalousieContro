@@ -8,6 +8,8 @@
 
 #include <windows.h>
 
+#define MAX_HID_PAYLOAD_SIZE 1024
+
 class hidInterface
 {
 public:
@@ -31,7 +33,8 @@ private:
     HANDLE     currentHID;
     HANDLE     hEventObject;
     OVERLAPPED HIDOverlapped;
-
+    uint8_t    txBuff[MAX_HID_PAYLOAD_SIZE];
+    uint8_t    rxBuff[MAX_HID_PAYLOAD_SIZE];
 };
 
 #endif // USERHIDINTERFACES_H

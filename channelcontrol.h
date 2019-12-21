@@ -17,6 +17,7 @@ public:
     ~channelControl();
     bool addPoint(double x, double y);
     bool addPoints(QVector<double> &x, QVector<double> &y);
+    void clearAxes(void);
     bool setYMax(double max);
     bool setYMin(double min);
     bool setXMax(double max);

@@ -35,14 +35,16 @@ SOURCES += \
         qcustomplot/qcustomplot.cpp \
         hidInterface.cpp \
     generalprotocol.cpp \
-    channelcontrol.cpp
+    channelcontrol.cpp \
+    protocolthread.cpp
 
 HEADERS += \
         jalousiecontrol.h \
         qcustomplot/qcustomplot.h \
         hidInterface.h \
     generalprotocol.h \
-    channelcontrol.h
+    channelcontrol.h \
+    protocolthread.h
 
 FORMS += \
         jalousiecontrol.ui \

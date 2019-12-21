@@ -40,11 +40,14 @@ bool channelControl::addPoints(QVector<double> &x, QVector<double> &y)
     if(x.size() != y.size()) {
         return false;
     }
-    for(uint32_t k = 0; k < x.size(); k++) {
-        ui->plote->graph(0)->addData(x[k], y[k]);
-    }
+    ui->plote->graph(0)->addData(x, y);
     ui->plote->replot();
     return true;
+}
+
+void channelControl::clearAxes(void)
+{
+    ui->plote->graph(0)->data()->clear();
 }
 
 bool channelControl::addPoint(double x, double y)
@@ -128,6 +131,7 @@ void channelControl::on_pushButtonSetAxesRanges_clicked()
 
     ui->plote->xAxis->setRange(minX, maxX);
     ui->plote->yAxis->setRange(minY, maxY);
+    ui->plote->replot();
 }
 
 void channelControl::on_pushButtonStop_clicked()

@@ -238,7 +238,7 @@ bool hidInterface::isHIDOpen(void)
     return true;
 }
 
-
+uint8_t buffCommand[1024 + 1];
 uint32_t hidInterface::read(uint8_t *buff, uint32_t numToRead, uint32_t timeout)
 {
      DWORD             Result;
@@ -252,21 +252,18 @@ uint32_t hidInterface::read(uint8_t *buff, uint32_t numToRead, uint32_t timeout)
      HIDOverlapped.Offset = 0;
      HIDOverlapped.OffsetHigh = 0;
 
-     uint8_t *buffCommand = (uint8_t*)malloc(numToRead + 1);
-
      Result = ReadFile (currentHID,
-                        buffCommand,
+                        rxBuff,
                         numToRead + 1,
                         &numBytesOfRead,
                         (LPOVERLAPPED) &HIDOverlapped);
      Result = WaitForSingleObject(hEventObject,   timeout);
-
      switch (Result)
      {
          case WAIT_OBJECT_0:
-         {       // Success;
-             memcpy(buff, buffCommand + 1, numToRead);
-             free(buffCommand);
+         {
+             memcpy((uint8_t*)buff, (uint8_t*)&rxBuff[1], numToRead);
+             //free(buffCommand);
              return numToRead;
          }
          case WAIT_TIMEOUT:
@@ -280,9 +277,7 @@ uint32_t hidInterface::read(uint8_t *buff, uint32_t numToRead, uint32_t timeout)
               break;
          }
      }
-
-     free(buffCommand);
-     CancelIo(currentHID);
+     //CancelIo(currentHID);
      return 0;
 }
 
@@ -300,17 +295,15 @@ uint32_t hidInterface::write(uint8_t *buff, uint32_t numToWrite, uint32_t timeou
     HIDOverlapped.Offset = 0;
     HIDOverlapped.OffsetHigh = 0;
 
-    uint8_t *buffCommand = (uint8_t*)malloc(numToWrite + 1);
-    buffCommand[0] = 0;
-    memcpy( &buffCommand[1], buff, numToWrite);
+    txBuff[0] = 0;
+    memcpy( &txBuff[1], buff, numToWrite);
 
-    WriteFile(currentHID, buffCommand, numToWrite + 1, &numBytesOfWrite, (LPOVERLAPPED) &HIDOverlapped);
+    WriteFile(currentHID, txBuff, numToWrite + 1, &numBytesOfWrite, (LPOVERLAPPED) &HIDOverlapped);
     Result = WaitForSingleObject(hEventObject,   timeout);
 
     switch (Result) {
         case WAIT_OBJECT_0:
         {       // Success;
-            free(buffCommand);
             return numToWrite;
         }
         case WAIT_TIMEOUT:
@@ -324,8 +317,6 @@ uint32_t hidInterface::write(uint8_t *buff, uint32_t numToWrite, uint32_t timeou
              break;
         }
     }
-
-    free(buffCommand);
-    CancelIo(currentHID);
+    //CancelIo(currentHID);
     return 0;
 }

@@ -1,6 +1,7 @@
 #include "QObject"
 #include "QVector"
 #include "QDebug"
+#include "QMutex"
 #include "generalprotocol.h"
 #include "stdint.h"
 #include "string.h"
@@ -9,25 +10,52 @@
 #define CHANNEL_CNT 0x7
 #define CHANNEL_ALL 0xFF
 
+typedef enum {
+    COMMAND_DATA_FLAG_8_BIT_SIZE  = 0,
+    COMMAND_DATA_FLAG_16_BIT_SIZE = 1,
+    COMMAND_DATA_FLAG_32_BIT_SIZE = 2,
+    COMMAND_DATA_FLAG_SIZE_MASK   = 3,
+}COMMAND_DATA_FLAG;
+
 typedef enum{
-    GP_ADC                    = 0,
+    GP_DATA                   = 0,
     GP_STOP                   = 1,
     GP_START_CLOCK_WISE       = 2,
     GP_START_CONTR_CLOCK_WISE = 3,
 } GP_COMMAND;
 
-
 #pragma pack(push, 1)
-#define PROTOCOL_BUFF_SIZE (BUFF_SIZE - 4)
-typedef struct GpCommand{
-    uint8_t headr;
-    uint8_t subcommand[PROTOCOL_BUFF_SIZE];
-} GpCommand;
+#define PROTOCOL_BUFF_SIZE (BUFF_SIZE - 1)
+typedef struct {
+    uint8_t  channel;
+    uint8_t  flags;
+    uint16_t cnt;
+    uint8_t  data[];
+}GpDataSubcommand;
 
 typedef struct {
-    uint16_t size;
-    uint16_t data[];
-}GpADCSubcommand;
+    uint8_t  channel;
+}GpStartClockWiseSubcommand;
+
+typedef struct {
+    uint8_t  channel;
+}GpStartContrClockWiseSubcommand;
+
+typedef struct {
+    uint8_t  channel;
+}GpStoptSubcommand;
+
+
+typedef struct GpCommand{
+    uint8_t headr;
+    union {
+        GpDataSubcommand                dataSubComand;
+        GpStartClockWiseSubcommand      startClockWiseSubcommand;
+        GpStartContrClockWiseSubcommand startContrClockWiseSubcommand;
+        GpStoptSubcommand               stoptSubcommand;
+        uint8_t          buffSubComand[PROTOCOL_BUFF_SIZE];
+    };
+} GpCommand;
 
 typedef union {
     GpCommand command;
@@ -37,7 +65,7 @@ typedef union {
 
 generalProtocol::generalProtocol()
 {
-    //
+
 }
 
 generalProtocol::~generalProtocol()
@@ -50,13 +78,51 @@ bool generalProtocol::gpDecode(uint8_t data[], uint32_t size)
     GpCommandBuff gpCommandBuff;
     memcpy((gpCommandBuff.buff), static_cast<uint8_t*>(data), size);
     switch(gpCommandBuff.command.headr) {
-        case GP_ADC:
-            GpADCSubcommand *gpADCSubcommand = (GpADCSubcommand*)gpCommandBuff.command.subcommand;
-            QVector<uint16_t> adcRezV;
-            for(uint32_t k = 0; k < gpADCSubcommand->size; k++) {
-                adcRezV.push_back(gpADCSubcommand->data[k]);
+        case GP_DATA:
+            uint8_t sizeFlag = gpCommandBuff.command.dataSubComand.flags & COMMAND_DATA_FLAG_SIZE_MASK;
+            QVector<uint8_t>  dataSize8;
+            switch(sizeFlag) {
+            case COMMAND_DATA_FLAG_8_BIT_SIZE: {
+                    QVector<uint8_t>  dataSize8(gpCommandBuff.command.dataSubComand.cnt / sizeof(uint8_t));
+                    uint8_t *rxType = (uint8_t*)(gpCommandBuff.command.dataSubComand.data);
+                    for(uint16_t k = 0; k < gpCommandBuff.command.dataSubComand.cnt; k += sizeof(int8_t)) {
+                        dataSize8[k / sizeof(uint8_t)] = (*rxType++);
+                    }
+                    emit gpDataRxSize8(dataSize8);
+                }
+                break;
+            case COMMAND_DATA_FLAG_16_BIT_SIZE: {
+                QVector<uint16_t> dataSize16(gpCommandBuff.command.dataSubComand.cnt / sizeof(uint16_t));
+                //QVector<double> dataSizeDouble(gpCommandBuff.command.dataSubComand.cnt / sizeof(uint16_t));
+                uint16_t *rxType = (uint16_t*)gpCommandBuff.command.dataSubComand.data;
+                for(uint16_t k = 0; k < gpCommandBuff.command.dataSubComand.cnt; k += sizeof(int16_t)) {
+                    dataSize16[k / sizeof(uint16_t)] = (*rxType++);
+                }
+                emit gpDataRxSize16(dataSize16);
             }
-            emit gpADCCommandRx(adcRezV);
+                break;
+/*
+            case COMMAND_DATA_FLAG_32_BIT_SIZE:{
+                QVector<double> dataSizeDouble(gpCommandBuff.command.dataSubComand.cnt / sizeof(uint32_t));
+                uint32_t *rxType = (uint32_t*)(gpCommandBuff.command.dataSubComand.data);
+                for(uint16_t k = 0; k < gpCommandBuff.command.dataSubComand.cnt; k += sizeof(int32_t)) {
+                    dataSize32[k / sizeof(uint32_t)] = (*rxType++);
+                }
+                emit gpDataRxSize32(dataSize32);
+            }
+                break;
+            }
+*/
+            case COMMAND_DATA_FLAG_32_BIT_SIZE:{
+                QVector<double> dataSizeDouble(gpCommandBuff.command.dataSubComand.cnt / sizeof(uint32_t));
+                uint32_t *rxType = (uint32_t*)(gpCommandBuff.command.dataSubComand.data);
+                for(uint16_t k = 0; k < gpCommandBuff.command.dataSubComand.cnt; k += sizeof(int32_t)) {
+                    dataSizeDouble[k / sizeof(uint32_t)] = static_cast<double>(*rxType++);
+                }
+                emit gpDataRxSizeDouble(dataSizeDouble);
+            }
+                break;
+            }
             break;
     };
     return true;
@@ -68,7 +134,7 @@ void generalProtocol::gpStopCommandTx(uint8_t channel)
     gpCommandV.resize(sizeof(GpCommand));
     GpCommand *gpCommand = (GpCommand*)(gpCommandV.data());
     gpCommand->headr = GP_STOP;
-    gpCommand->subcommand[0] = static_cast<uint8_t>(channel);
+    gpCommand->stoptSubcommand.channel = static_cast<uint8_t>(channel);
     emit gpSend(gpCommandV);
 }
 
@@ -78,7 +144,7 @@ void generalProtocol::gpStartClockWiseCommandTx(uint8_t channel)
     gpCommandV.resize(sizeof(GpCommand));
     GpCommand *gpCommand = (GpCommand*)(gpCommandV.data());
     gpCommand->headr = GP_START_CLOCK_WISE;
-    gpCommand->subcommand[0] = static_cast<uint8_t>(channel);
+    gpCommand->stoptSubcommand.channel = static_cast<uint8_t>(channel);
     emit gpSend(gpCommandV);
 }
 
@@ -88,6 +154,6 @@ void generalProtocol::gpStartContrClockWiseCommandTx(uint8_t channel)
     gpCommandV.resize(sizeof(GpCommand));
     GpCommand *gpCommand = (GpCommand*)(gpCommandV.data());
     gpCommand->headr = GP_START_CONTR_CLOCK_WISE;
-    gpCommand->subcommand[0] = static_cast<uint8_t>(channel);
+    gpCommand->stoptSubcommand.channel = static_cast<uint8_t>(channel);
     emit gpSend(gpCommandV);
 }
